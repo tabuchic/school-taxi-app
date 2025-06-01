@@ -1,5 +1,6 @@
-import React from 'react';
-import { useAppContext } from '@/contexts/AppContext';
+import React, { useEffect, useState } from 'react';
+import { doc, onSnapshot } from 'firebase/firestore';
+import db from '@/firebase';
 import ColorBox from './ColorBox';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -9,7 +10,30 @@ const TAXI_COLORS = [
 ];
 
 const TeacherView: React.FC = () => {
-  const { taxiState } = useAppContext();
+  const [selectedColors, setSelectedColors] = useState<boolean[]>(new Array(8).fill(false));
+  const [taxiNames, setTaxiNames] = useState<string[]>(new Array(8).fill(''));
+  const [textField1, setTextField1] = useState('');
+  const [textField2, setTextField2] = useState('');
+
+  useEffect(() => {
+    const ref = doc(db, 'selection', 'current');
+
+    const unsubscribe = onSnapshot(ref, (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+
+        // Match selected hex colors to the original color array
+        const colorBooleans = TAXI_COLORS.map(color => data.selectedColors?.includes(color) || false);
+        setSelectedColors(colorBooleans);
+
+        setTaxiNames(data.taxiNames || new Array(8).fill(''));
+        setTextField1(data.textField1 || '');
+        setTextField2(data.textField2 || '');
+      }
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -29,11 +53,11 @@ const TeacherView: React.FC = () => {
                 <div key={index} className="flex flex-col items-center space-y-2">
                   <ColorBox
                     color={color}
-                    isSelected={taxiState.selectedColors[index]}
+                    isSelected={selectedColors[index]}
                     isClickable={false}
                   />
                   <span className="text-sm font-medium text-gray-600">
-                    {taxiState.taxiNames[index]}
+                    {taxiNames[index]}
                   </span>
                 </div>
               ))}
@@ -41,18 +65,18 @@ const TeacherView: React.FC = () => {
           </CardContent>
         </Card>
 
-        {(taxiState.textField1 || taxiState.textField2) && (
+        {(textField1 || textField2) && (
           <Card className="shadow-lg">
             <CardContent className="p-6">
               <h3 className="text-xl font-semibold mb-4 text-gray-800">Announcements</h3>
-              {taxiState.textField1 && (
+              {textField1 && (
                 <div className="mb-3 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-                  <p className="text-gray-800">{taxiState.textField1}</p>
+                  <p className="text-gray-800">{textField1}</p>
                 </div>
               )}
-              {taxiState.textField2 && (
+              {textField2 && (
                 <div className="p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
-                  <p className="text-gray-800">{taxiState.textField2}</p>
+                  <p className="text-gray-800">{textField2}</p>
                 </div>
               )}
             </CardContent>

@@ -57,12 +57,16 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLogin }) => {
             </Button>
           </form>
           <div className="mt-4 text-center text-sm text-gray-600">
-            <p>Default password: admin123</p>
+            {
+            /*<p>Default password: admin123</p>
+            */
+            }
           </div>
         </CardContent>
       </Card>
     </div>
   );
 };
+
 
 export default LoginForm;

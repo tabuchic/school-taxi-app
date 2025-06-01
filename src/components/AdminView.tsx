@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { doc, setDoc } from 'firebase/firestore';
+import db from '@/firebase';
 import { useAppContext } from '@/contexts/AppContext';
 import ColorBox from './ColorBox';
 import PasswordResetDialog from './PasswordResetDialog';
@@ -25,6 +27,28 @@ const AdminView: React.FC = () => {
   } = useAppContext();
   const [showResetDialog, setShowResetDialog] = useState(false);
   const { toast } = useToast();
+
+  // Sync taxiState to Firestore whenever it changes
+  useEffect(() => {
+    const selectedColorHexes = TAXI_COLORS.filter((_, i) => taxiState.selectedColors[i]);
+
+    const updateFirestore = async () => {
+      try {
+        const ref = doc(db, 'selection', 'current');
+        await setDoc(ref, {
+          selectedColors: selectedColorHexes,
+          taxiNames: taxiState.taxiNames,
+          textField1: taxiState.textField1,
+          textField2: taxiState.textField2,
+          timestamp: Date.now(), // optional
+        });
+      } catch (err) {
+        console.error('Failed to sync with Firestore:', err);
+      }
+    };
+
+    updateFirestore();
+  }, [taxiState.selectedColors, taxiState.taxiNames, taxiState.textField1, taxiState.textField2]);
 
   const handleColorToggle = (index: number) => {
     const newColors = [...taxiState.selectedColors];
